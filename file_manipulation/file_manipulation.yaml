@@ -1,0 +1,52 @@
+---
+- name: Testing file manipulation skills
+  hosts: ansible1
+  tasks:
+    - name: Create a new file
+      ansible.builtin.file:
+        name: /tmp/newfile
+        state: touch
+        mode: '0644'
+
+    - name: Check status of the new file
+      ansible.builtin.stat:
+        path: /tmp/newfile
+      register: newfile
+
+    - name: For debugging only
+      ansible.builtin.debug:
+        msg: the current values for newfile are {{ newfile }}
+
+    - name: Change the file owner if needed
+      ansible.builtin.file:
+        path: /tmp/newfile
+        owner: ansible
+      when: newfile.stat.pw_name != 'ansible'
+
+- name: Fetching a remote file
+  hosts: ansible1
+  tasks:
+    - name: Fetch file from the remote machine
+      ansible.builtin.fetch:
+        src: /etc/motd
+        dest: /tmp
+
+- name: Adding text to the file on localhost
+  hosts: localhost
+  tasks:
+    - name: Add a message
+      ansible.builtin.blockinfile:
+        path: /tmp/ansible1/etc/motd
+        block: |
+          welcome to this server
+          for authorized users only
+        state: present
+
+- name: Copy the modified file to ansible 2
+  hosts: ansible2
+  tasks:
+    - name: Copy motd file
+      ansible.builtin.copy:
+        src: /tmp/ansible1/etc/motd
+        dest: /tmp
+        mode: '0644'

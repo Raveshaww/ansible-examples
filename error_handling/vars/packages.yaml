@@ -1,0 +1,6 @@
+---
+packages:
+  - name: httpd
+    state: latest
+  - name: mod_ssl
+    state: latest

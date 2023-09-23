@@ -1,0 +1,25 @@
+---
+- name: Managing web server SELinux properties
+  hosts: ansible1
+  tasks:
+    - name: Uninstall the webserver
+      ansible.builtin.dnf:
+        name: httpd
+        state: absent
+
+    - name: Close the firewall service
+      ansible.posix.firewalld:
+        service: http
+        state: disabled
+        immediate: true
+
+    - name: Create the /web directory
+      ansible.builtin.file:
+        name: /web
+        state: absent
+
+    - name: Allow the webserver to run user content
+      ansible.posix.seboolean:
+        name: httpd_read_user_content
+        state: true
+        persistent: true

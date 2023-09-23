@@ -1,0 +1,46 @@
+---
+- name: Install packages
+  hosts: ansible2
+  vars_files: vars/packages.yaml
+  tasks:
+    - name: Install packages
+      when: ansible_facts.os_family == "RedHat"
+      block:
+        - name: Installing packages
+          ansible.builtin.dnf:
+            name: "{{ item.name }}"
+            state: "{{ item.state }}"
+          loop: "{{ packages }}"
+
+        - name: Setup firewall for http
+          ansible.posix.firewalld:
+            service: http
+            immediate: true
+            permanent: true
+            state: enabled
+
+        - name: Setup firewall for https
+          ansible.posix.firewalld:
+            service: https
+            immediate: true
+            permanent: true
+            state: enabled
+
+      rescue:
+        - name: Running rescue statement
+          ansible.builtin.debug:
+            msg: "Host {{ ansible_facts.hostname }} does not meet the minimal requirements"
+
+    - name: Copy index.html
+      ansible.builtin.copy:
+        src: tmp/index.html
+        dest: /var/www/html
+        mode: '0644'
+      register: command_result
+      ignore_errors: true
+
+    - name: Restart httpd
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
+      when: not command_result.failed

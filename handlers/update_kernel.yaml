@@ -1,0 +1,14 @@
+---
+- name: update the kernel
+  hosts: all
+  force_handlers: true
+  tasks:
+    - name: Update the kernel
+      ansible.builtin.dnf:
+        name: kernel
+        state: latest
+      notify: Reboot server
+
+  handlers:
+    - name: Reboot server
+      ansible.builtin.command: reboot

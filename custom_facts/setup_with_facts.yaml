@@ -1,0 +1,29 @@
+---
+- name: Copy custom facts
+  hosts: ansible1
+  tasks:
+    - name: Create the custom facts directory
+      ansible.builtin.file:
+        state: directory
+        recurse: true
+        path: /etc/ansible/facts.d
+
+    - name: Copy the custom facts
+      ansible.builtin.copy:
+        src: custom.fact
+        dest: /etc/ansible/facts.d
+        mode: '0644'
+
+- name: Install and start the web service
+  hosts: ansible1
+  tasks:
+    - name: Install the package
+      ansible.builtin.dnf:
+        name: "{{ ansible_facts.ansible_local.custom.software.package }}"
+        state: latest
+
+    - name: Start the service
+      ansible.builtin.service:
+        name: "{{ ansible_facts.ansible_local.custom.software.service }}"
+        state: "{{ ansible_facts.ansible_local.custom.software.state }}"
+        enabled: "{{ ansible_facts.ansible_local.custom.software.enabled }}"

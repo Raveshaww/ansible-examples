@@ -1,0 +1,9 @@
+---
+- name: Generate /etc/hosts/file
+  hosts: all
+  tasks:
+    - name: Generate hosts file
+      ansible.builtin.template:
+        src: conditional_template.j2
+        dest: /tmp/hosts
+        mode: '0644'

@@ -1,0 +1,31 @@
+---
+- name: Working with rhel system roles
+  hosts: all
+  vars:
+    selinux_policy: targeted
+    selinux_state: enforcing
+    selinux_booleans:
+      - {name: 'cron_can_relabel', state: 'on', persistent: 'yes'}
+    selinux_fcontexts:
+      - {target: '/var/ftp/uploads(/.*)?', setype: 'public_content_rw_t', ftype: 'd'}
+    selinux_restore_dirs:
+      - /var/ftp/uploads
+    selinux_ports:
+      - {ports: '82', proto: 'tcp', setype: 'http_port_t', state: 'present'}
+  tasks:
+    - name: Creates the /var/ftp/uploads directory
+      ansible.builtin.file:
+        path: /var/ftp/uploads
+        state: directory
+        mode: '0644'
+
+    - name: Runs the selinux role
+      block:
+        - name: Run rhel-system-roles.selinux
+          ansible.builtin.include_role:
+            name: rhel-system-roles.selinux
+
+      rescue:
+        - name: Restart managed host
+          ansible.builtin.reboot:
+            reboot_timeout: 3600

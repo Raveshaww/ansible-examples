@@ -1,0 +1,20 @@
+---
+- name: Using assert to check if volume group vgdata exists
+  hosts: all
+  tasks:
+    - name: Check if vgdata exists
+      ansible.builtin.command: vgs vgdata
+      register: vg_result
+      ignore_errors: true
+
+    - name: Show vg_result variable
+      ansible.builtin.debug:
+        var: vg_result
+      tags: [never, debug]
+
+    - name: Print a message
+      ansible.builtin.assert:
+        that:
+          - vg_result.rc == 0
+        fail_msg: volume group was not found
+        success_msg: volume group was found

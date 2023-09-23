@@ -1,0 +1,64 @@
+---
+- name: Managing web server SELinux properties
+  hosts: ansible1
+  tasks:
+    - name: Ensure that SELinux is enabled and enforcing
+      ansible.posix.selinux:
+        policy: targeted
+        state: enforcing
+
+    - name: Install the webserver
+      ansible.builtin.dnf:
+        name: httpd
+        state: latest
+
+    - name: Open the firewall service
+      ansible.posix.firewalld:
+        service: http
+        state: enabled
+        immediate: true
+
+    - name: Create the /web directory
+      ansible.builtin.file:
+        name: /web
+        state: directory
+        mode: '0644'
+
+    - name: Create the index.html file in /web
+      ansible.builtin.copy:
+        content: 'welcome to the selinux web server test'
+        dest: /web/index.html
+        mode: '0644'
+
+    - name: Use lineinfile to change webserver config
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^DocumentRoot "/var/www/html"'
+        line: DocumentRoot "/web"
+
+    - name: Use lineinfile to change webserver security
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^<Directory "/var/www">'
+        line: '<Directory "/web">'
+
+    - name: Use sefcontext to set context on new document
+      community.general.sefcontext:
+        target: '/web(/.*)?'
+        setype: httpd_sys_content_t
+        state: present
+
+    - name: Run the restorecon command
+      ansible.builtin.command: restorecon -Rv /web
+
+    - name: Allow the webserver to run user content
+      ansible.posix.seboolean:
+        name: httpd_read_user_content
+        state: true
+        persistent: true
+
+    - name: Start and enable the webserver
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
